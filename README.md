@@ -88,7 +88,8 @@ sudo service apache2 restart
 
 4. Create database schema and config.xml
 
-
+![](docs/pics/installdb_page.png)
+![](docs/pics/loris_config1.png)
 
 
 5. Install Imaging pipeline
@@ -137,8 +138,4 @@ Install .deb packages
 
     bash ./imaging_install.sh
     ```
-    
-#### Insert DICOM - View BrainBrowser
-
-
-
+![](docs/pics/minc_tool_installation.png)
