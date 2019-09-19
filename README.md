@@ -1,21 +1,7 @@
-# [![Build Status](https://travis-ci.org/aces/Loris.svg?branch=master)](https://travis-ci.org/aces/Loris) LORIS Neuroimaging Platform 
+# [![Build Status](https://travis-ci.org/aces/Loris.svg?branch=master)](https://travis-ci.org/aces/Loris) LORIS setup for the Medical Informatics Platform of the Human Brain Project 
 
-LORIS (Longitudinal Online Research and Imaging System) is a self-hosted web application that provides data- and project-management for neuroimaging research. LORIS makes it easy to manage large datasets including behavioural, clinical, neuroimaging and genetic data acquired over time or at different sites.
+This is a setup of LORIS' v21.0.1 tailored for the hospitals that have joined the Human Brain Project and use the [Medical Informatics Platform](https://github.com/HBPMedical).
 
-A demo instance is available at https://demo.loris.ca.
-
-This Readme covers installation of the LORIS <b>v21</b> release on <b>Ubuntu</b>.
-([CentOS Readme also available](https://github.com/aces/Loris/blob/master/README.CentOS6.md)).
-
-Please consult the [LORIS Wiki Setup Guide](https://github.com/aces/Loris/wiki/Setup) notes on this [Install process](https://github.com/aces/Loris/wiki/Installing-Loris) for more information.
-
-#### Heroku
-
-You can try LORIS on Heroku before installing it on your system. The project management and clinical data management functions of LORIS are available for experimenting with. Imaging functionality is not yet available.
-
-Deploy and log in with username *admin* and the password that's set up during deployment via ClearDB.
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/aces/Loris/tree/master)
 <br>
 
 ## Installation
@@ -27,14 +13,26 @@ Deploy and log in with username *admin* and the password that's set up during de
  * PHP <b>7.2</b> or higher
  * [Composer](https://getcomposer.org/)
  * NodeJS <b>8.0</b> or higher
+ 
+#### Getting Prerequisites
+ ```
+sudo apt-get update 
+sudo apt-get install -y mysql-server mysql-client 
+sudo apt-get install -y zip curl wget python-software-properties software-properties-common 
+sudo add-apt-repository ppa:ondrej/php 
+sudo apt-get update 
+sudo apt-get install -y apache2 
+sudo apt-get install -y php7.2 php7.2-mysql php7.2-xml php7.2-json php7.2-mbstring php7.2-gd php-ast 
+sudo apt-get install -y composer 
+sudo apt-get install -y libapache2-mod-php7.2 
+sudo a2enmod php7.2 
+sudo service apache2 restart 
+ ```
 
-These dependencies are subject to change so be sure to verify your version of MySQL and PHP when updating LORIS.
+#### Install Steps
+   Installation Steps for installing LORIS in a remote machine (VM or not).
 
-### Install Steps
-
-Consult the [LORIS Wiki](https://github.com/aces/Loris/wiki/Setup) page on this [Install process](https://github.com/aces/Loris/wiki/Installing-Loris) for more information.
-
-1. Set up LINUX user lorisadmin and create LORIS base directory:
+1. Creating a User for LORIS
 
     ```
     sudo useradd -U -m -G sudo -s /bin/bash lorisadmin
@@ -44,59 +42,103 @@ Consult the [LORIS Wiki](https://github.com/aces/Loris/wiki/Setup) page on this 
 
     <b>Important: All steps from this point forward must be executed by lorisadmin user</b>
 
+    ssh into your remote machine as a user in the sudo group (like root)
+    ``` 
+    sudo useradd -U -m -G sudo -s /bin/bash lorisadmin 
+    sudo passwd lorisadmin 
+    su - lorisadmin 
+    whoami
     ```
-    sudo mkdir -m 775 -p /var/www/$projectname
-    sudo chown lorisadmin.lorisadmin /var/www/$projectname
+    You should see lorisadmin.
+
+
+2. Downloading LORIS
+    Make sure you're ssh'd as lorisadmin
+    Note that the path is assumed to be var/www/loris however your own path may be var/www/<project-name>, depending on your setup.
+    ```
+    cd /var/www
+    git clone https://github.com/aces/Loris.git
+    wget https://github.com/aces/Loris/archive/v21.0.0.zip -O release.zip 
+    sudo unzip release.zip
+    sudo mv Loris* loris    
+    sudo chown -R lorisadmin.lorisadmin /var/www/loris
+    sudo service apache2 restart     
+    cd /var/www/loris/tools    
+    ./install.sh  (when prompted, give as project name ‘loris’)
+    sudo a2enmod rewrite 
+    sudo a2ensite loris 
+    sudo chmod 775 /var/www/loris/project/
+    service apache2 reload
+    sudo service apache2 restart 
     ```
 
-    <i>$projectname ⇾ "loris" or one-word project name</i>
-
-2. Get code:
-    Download the latest release from the [releases page](https://github.com/aces/Loris/releases) and
-    extract it to `/var/www/$projectname`
-
-3. Run installer script to install core code, and libraries. The script will prompt for information and so that it can create directories automatically.
+3. Install Composer
 
     For more information, please read the [Installing Loris wiki page](https://github.com/aces/Loris/wiki/Installing-Loris).
 
     ```
-    cd /var/www/$projectname/tools
-    ./install.sh
+   curl -sS https://getcomposer.org/installer -o composer-setup.php
+       php -r "if (hash_file('SHA384', 'composer-setup.php') === 'a5c698ffe4b8e849a443b120cd5ba38043260d5c4023dbf93e1558871f1f07f58274fc6f4c93bcfd858c6bd0775cd8d1') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+    sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+    ```
+    in case of multiple versions of php
+    ```
+    sudo update-alternatives --set php /usr/bin/php7.2
     ```
 
-4. Apache configuration and restart 
-LORIS requires Apache's mod_rewrite module to rewrite its URLs. Enable this module, then restart Apache: 
+4. Create database schema and config.xml
+
+
+
+
+5. Install Imaging pipeline
+    
+    https://github.com/aces/Loris-MRI
+    ```
+    sudo mkdir -p /data/loris/bin/mri
+    sudo chown -R lorisadmin:lorisadmin /data/loris
+    cd /data/loris/bin
+    git clone -b master https://github.com/aces/Loris-MRI.git mri
+
+    sudo apt-get install python3 
+    sudo apt-get install python3-dev
+    sudo apt-get install python3-pip
+    sudo apt-get install libmysqlclient-dev
+    sudo pip3 install virtualenv
+    From http://bic-mni.github.io/
+
+    sudo apt-get install libc6 libstdc++6 imagemagick perl
+    ```
+Download
+1) minc-toolkit-<version>.deb
+2) minc-toolkit-testsuite-<version>.deb
+3) bic-mni-models-<version>.deb
+4) beast-library-<version>.deb
 
     ```
-    sudo a2enmod rewrite
-    sudo service apache2 reload
+    cd ~
+    wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb
+    wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/minc-toolkit-testsuite-0.1.3-20131212.deb
+    wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/bic-mni-models-0.1.1-20120421.deb
+    wget http://packages.bic.mni.mcgill.ca/minc-toolkit/Debian/beast-library-1.1.0-20121212.deb
     ```
 
-5. Go to http://localhost/installdb.php and follow the instructions to finalize LORIS installation.
-
-    _Note_: Apache config files will be installed as *.conf, per Ubuntu 14.04. If running an earlier version of Ubuntu, rename these files, then run the following commands. After, restart Apache.
-
-
+Install .deb packages
     ```
-    sudo a2dissite default
-    sudo a2ensite $projectname
+    sudo dpkg -i minc-toolkit-1.9.16-20180117-Ubuntu_16.04-x86_64.deb sudo dpkg -i minc-toolkit-testsuite-0.1.3-20131212.deb
+    sudo dpkg -i bic-mni-models-0.1.1-20120421.deb
+    sudo dpkg -i beast-library-1.1.0-20121212.deb
+    
+    source /opt/minc/1.9.16/minc-toolkit-config.sh
+
+    cd /data/loris/bin/mri/
+
+    sudo mkdir /data/incoming
+
+    bash ./imaging_install.sh
     ```
+    
+#### Insert DICOM - View BrainBrowser
 
-6. Follow the [Setup Guide in the LORIS Wiki](https://github.com/aces/Loris/wiki/Setup) to complete your post-installation setup and configuration, and for more documentation.
 
-## Community
-
-### GitHub Issues
-Please don't hesitate to create an issue if you're stuck with something. Please
-include details such as the version of LORIS you're using as well as information
-such as the OS you're using, your PHP and Apache versions, etc.
-
-### Get in touch
-Please feel free to subscribe to the [LORIS Developers mailing list](http://www.bic.mni.mcgill.ca/mailman/listinfo/loris-dev) to ask any LORIS-related questions. We may also be able to provide you with installation guidance not covered in the Wiki.
-
-## Contributing
-
-### Contributing Code
-If you would like to contribue to LORIS development, please consult our
-[Contributing Guide](./CONTRIBUTING.md).
 
