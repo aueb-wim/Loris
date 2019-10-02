@@ -1,4 +1,4 @@
-# [![Build Status](https://travis-ci.org/aces/Loris.svg?branch=master)](https://travis-ci.org/aces/Loris) LORIS setup for the Medical Informatics Platform of the Human Brain Project 
+# [![Build Status](https://travis-ci.org/aces/Loris.svg?branch=master)](https://travis-ci.org/aces/Loris) LORIS setup for the Medical Informatics Platform of the Human Brain Project
 
 This is a setup of LORIS' v21.0.1 tailored for the hospitals that have joined the Human Brain Project and use the [Medical Informatics Platform](https://github.com/HBPMedical).
 
@@ -9,24 +9,24 @@ This is a setup of LORIS' v21.0.1 tailored for the hospitals that have joined th
 #### System Requirements
 
  * Apache **2.4** or higher
- * MySQL >= 5.7 (or MariaDB >= 10.3) 
+ * MySQL >= 5.7 (or MariaDB >= 10.3)
  * PHP <b>7.2</b> or higher
  * [Composer](https://getcomposer.org/)
  * NodeJS <b>8.0</b> or higher
- 
+
 #### Getting Prerequisites
  ```
-sudo apt-get update 
-sudo apt-get install -y mysql-server mysql-client 
-sudo apt-get install -y zip curl wget python-software-properties software-properties-common 
-sudo add-apt-repository ppa:ondrej/php 
-sudo apt-get update 
-sudo apt-get install -y apache2 
-sudo apt-get install -y php7.2 php7.2-mysql php7.2-xml php7.2-json php7.2-mbstring php7.2-gd php-ast 
-sudo apt-get install -y composer 
-sudo apt-get install -y libapache2-mod-php7.2 
-sudo a2enmod php7.2 
-sudo service apache2 restart 
+sudo apt-get update
+sudo apt-get install -y mysql-server mysql-client
+sudo apt-get install -y zip curl wget python-software-properties software-properties-common
+sudo add-apt-repository ppa:ondrej/php
+sudo apt-get update
+sudo apt-get install -y apache2
+sudo apt-get install -y php7.2 php7.2-mysql php7.2-xml php7.2-json php7.2-mbstring php7.2-gd php-ast
+sudo apt-get install -y composer
+sudo apt-get install -y libapache2-mod-php7.2
+sudo a2enmod php7.2
+sudo service apache2 restart
  ```
 
 #### Install Steps
@@ -46,9 +46,9 @@ su - lorisadmin
 ssh into your remote machine as a user in the sudo group (like root)
 
 ``` shell
-sudo useradd -U -m -G sudo -s /bin/bash lorisadmin 
-sudo passwd lorisadmin 
-su - lorisadmin 
+sudo useradd -U -m -G sudo -s /bin/bash lorisadmin
+sudo passwd lorisadmin
+su - lorisadmin
 whoami
 ```
 
@@ -62,18 +62,18 @@ Note that the path is assumed to be var/www/loris however your own path may be v
 ```shell
 cd /var/www
 git clone https://github.com/aces/Loris.git
-wget https://github.com/aces/Loris/archive/v21.0.0.zip -O release.zip 
+wget https://github.com/aces/Loris/archive/v21.0.0.zip -O release.zip
 sudo unzip release.zip
 sudo mv Loris* loris    
 sudo chown -R lorisadmin.lorisadmin /var/www/loris
 sudo service apache2 restart     
 cd /var/www/loris/tools    
 ./install.sh  (when prompted, give as project name ‘loris’)
-sudo a2enmod rewrite 
-sudo a2ensite loris 
+sudo a2enmod rewrite
+sudo a2ensite loris
 sudo chmod 775 /var/www/loris/project/
 service apache2 reload
-sudo service apache2 restart 
+sudo service apache2 restart
 ```
 
 3. Install Composer
@@ -108,7 +108,7 @@ sudo chown -R lorisadmin:lorisadmin /data/loris
 cd /data/loris/bin
 git clone -b master https://github.com/aces/Loris-MRI.git mri
 
-sudo apt-get install python3 
+sudo apt-get install python3
 sudo apt-get install python3-dev
 sudo apt-get install python3-pip
 sudo apt-get install libmysqlclient-dev
@@ -148,3 +148,20 @@ bash ./imaging_install.sh
 ```
 
 ![](docs/pics/minc_tool_installation.png)
+
+6. Quality control
+
+In order to mark all newly inserted mnics as "Pass" we need to add a trigger function.
+
+```shell
+CREATE DEFINER = CURRENT_USER TRIGGER `LORIS`.`files_AFTER_INSERT` AFTER INSERT ON `files` FOR EACH ROW
+BEGIN
+	INSERT INTO files_qcstatus
+	SET	FileID = NEW.FileID,
+     SeriesUID = NEW.SeriesUID,
+     EchoTime = NEW.EchoTime,
+     QCStatus = "Pass",
+     QCFirstChangeTime = unix_timestamp( NOW() ),
+     QCLastChangeTime = unix_timestamp( NOW() );
+END
+```
