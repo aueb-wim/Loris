@@ -151,7 +151,7 @@ bash ./imaging_install.sh
 
 6. Quality control
 
-In order to mark all newly inserted mnics as "Pass" we need to add a trigger function.
+In order to mark all newly inserted mincs as "Pass" we need to add a trigger function.
 
 ```shell
 CREATE DEFINER = CURRENT_USER TRIGGER `LORIS`.`files_AFTER_INSERT` AFTER INSERT ON `files` FOR EACH ROW
@@ -164,4 +164,16 @@ BEGIN
      QCFirstChangeTime = unix_timestamp( NOW() ),
      QCLastChangeTime = unix_timestamp( NOW() );
 END
+```
+
+Loris does not store the StudyID of the mincs files into the database. One workaround is to modify the files table
+
+```shell
+ALTER TABLE files ADD FileStudyID TEXT DEFAULT NULL;
+```
+
+and exercute fill_studyid.py which read the mnic header to fill the missing studyid information at the table.
+
+```shell
+python fill_studyid.py
 ```
