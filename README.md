@@ -151,7 +151,9 @@ bash ./imaging_install.sh
 
 6. Quality control
 
-In order to mark all newly inserted mincs as "Pass" we need to add a trigger function.
+In order to mark all newly inserted mincs as "Pass"
+
+Images in our case are ought to be initialized with a 'PASS' label upon being imported to LORIS. This is done by triger "files_AFTER_INSERT"
 
 ```shell
 CREATE DEFINER = CURRENT_USER TRIGGER `LORIS`.`files_AFTER_INSERT` AFTER INSERT ON `files` FOR EACH ROW
@@ -166,14 +168,15 @@ BEGIN
 END
 ```
 
-Loris does not store the StudyID of the mincs files into the database. One workaround is to modify the files table
+Loris does not store the StudyID of the mincs files into the database. One workaround is to modify the "files" table
 
 ```shell
 ALTER TABLE files ADD FileStudyID TEXT DEFAULT NULL;
 ```
 
-and exercute fill_studyid.py which read the mnic header to fill the missing studyid information at the table.
+and exercute fill_studyid.py which read the mnic header of each file to fill the missing studyid information.
 
 ```shell
+sudo apt-get install minc-tools
 python fill_studyid.py
 ```
