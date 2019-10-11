@@ -180,3 +180,9 @@ and exercute fill_studyid.py which read the mnic header of each file to fill the
 sudo apt-get install minc-tools
 python fill_studyid.py
 ```
+
+In order to discriminize which files with "PASS" have been examined for the next stage we add one column 
+
+```shell
+ALTER TABLE files ADD FileStudyID TEXT DEFAULT NULL;
+```
